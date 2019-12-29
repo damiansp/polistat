@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 
 # TODO:
-# NEXT: CandidateBio.getBio() .getDetailedBio() .getAddlBio() and merge
+# NEXT: Unpack senator bios -> to DF; merge; APIClass Super
 import json
+from pprint import pprint
 
 from votesmart import APIHandler
 
@@ -17,6 +18,8 @@ def main():
     print(senators_df.head())
     print('Saving senator data...')
     senators_df.to_csv(f'{DATA}/senators_{YEAR}.csv', index=False)
+    senator_bios = vs.get_senator_bios()
+    pprint(senator_bios)
 
     
 def init_vs():
