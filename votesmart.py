@@ -69,48 +69,49 @@ class APIHandler:
         return df                                                 
 
     
-# TODO: create a SuperClass to handle common functionality for the following
-
-class Officials:
-    def __init__(self, url, params):
-        self.url = f'{url}/Officials'
+# Super class for API Calls
+class APIClassHandler:
+    def __init__(self, params):
         self.params = params
+
+    def call(self, url):
+        try:
+            res = requests.get(url, params=self.params)
+            return res.json()
+        except BaseException as e:
+            print(f'Error obtaining data from {url} with params: '
+                  f'{self.params}\n{e}')
+            return {}
+        
+
+class Officials(APIClassHandler):
+    def __init__(self, url, params):
+        super().__init__(params)
+        self.url = f'{url}/Officials'
         
     def get_by_office_state(self, office, state):
         params = self.params
         params.update({'officeId': office, 'stateId': state})
         url = f'{self.url}.getByOfficeState'
-        try:
-            res = requests.get(url, params=params)
-            return res.json()
-        except BaseException as e:
-            print(f'Error obtaining data from {url} with params: {params}\n{e}')
-            return {}
+        res = super().call(url)
+        return res
 
 
-class CandidateBio:
+class CandidateBio(APIClassHandler):
     def __init__(self, url, params):
+        super().__init__(params)
         self.url = f'{url}/CandidateBio'
-        self.params = params
 
     def get_bio(self, candidate_id):
         params = self.params
         params.update({'candidateId': candidate_id})
         url = f'{self.url}.getBio'
-        try:
-            res = requests.get(url, params=params)
-            return res.json()
-        except BaseException as e:
-            print(f'Error obtaining data from {url} with params: {params}\n{e}')
-            return {}
+        res = super().call(url)
+        return res
         
     def get_detailed_bio(self, candidate_id):
         params = self.params
         params.update({'candidateId': candidate_id})
         url = f'{self.url}.getDetailedBio'
-        try:
-            res = requests.get(url, params=params)
-            return res.json()
-        except BaseException as e:
-            print(f'Error obtaining data from {url} with params: {params}\n{e}')
-            return {}
+        res = super().call(url)
+        return res

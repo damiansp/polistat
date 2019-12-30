@@ -2,6 +2,7 @@
 
 # TODO:
 # NEXT: Unpack senator bios -> to DF; merge; APIClass Super
+from datetime import datetime
 import json
 from pprint import pprint
 
@@ -9,7 +10,9 @@ from votesmart import APIHandler
 
 
 DATA = 'data'
-YEAR = '2019'
+CONFIG = 'config'
+DATE = datetime.now()
+YEAR = DATE.year
 
 
 def main():
@@ -19,11 +22,11 @@ def main():
     print('Saving senator data...')
     senators_df.to_csv(f'{DATA}/senators_{YEAR}.csv', index=False)
     senator_bios = vs.get_senator_bios()
-    pprint(senator_bios)
+    print(senator_bios)
 
     
 def init_vs():
-    with open('config/keys.json') as f:
+    with open(f'{CONFIG}/keys.json') as f:
         keys = json.load(f)
     votesmart_api_key = keys['votesmart']['APIKey']
     vs = APIHandler(votesmart_api_key)
