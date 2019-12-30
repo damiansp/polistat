@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 # TODO:
-# NEXT: Unpack senator bios -> to DF; merge; APIClass Super
+# NEXT: Unpack senator bios (in notebook) -> to DF; merge; APIClass Super
 from datetime import datetime
 import json
 from pprint import pprint
