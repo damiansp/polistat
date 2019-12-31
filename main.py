@@ -17,12 +17,13 @@ YEAR = DATE.year
 
 def main():
     vs = init_vs()
-    senators_df = vs.get_current_senators('df')
-    print(senators_df.head())
-    print('Saving senator data...')
-    senators_df.to_csv(f'{DATA}/senators_{YEAR}.csv', index=False)
-    senator_bios = vs.get_senator_bios()
-    print(senator_bios)
+    senators = vs.get_current_senators()
+    pprint(senators)
+    #print(senators_df.head())
+    #print('Saving senator data...')
+    #senators_df.to_csv(f'{DATA}/senators_{YEAR}.csv', index=False)
+    #senator_bios = vs.get_senator_bios()
+    #print(senator_bios)
 
     
 def init_vs():
