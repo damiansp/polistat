@@ -16,8 +16,8 @@ YEAR = DATE.year
 def main():
     vs = init_vs()
     senators = vs.get_current_senators()
-    #senator_bios = vs.get_senator_bios()
-    
+    senator_bios = vs.get_senator_bios()
+    vs.save_data()
 
     
 def init_vs():

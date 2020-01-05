@@ -1,6 +1,7 @@
 '''
 TODO
 '''
+from datetime import datetime
 
 import requests
 
@@ -17,6 +18,9 @@ STATES = ['CA', 'KY', 'OR'] if DEV else [
     'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK',
     'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV',
     'WI', 'WY']
+API_DATE_FORMAT = '%m/%d/%Y'
+TODAY = datetime.utcnow().date()
+OUTPUT = 'data'
 
 
 class APIHandler:
@@ -35,37 +39,51 @@ class APIHandler:
             res = {k.replace('candidateList_', ''): v for k,v in res.items()}
             df = pd.DataFrame(res)
             out.append(df)
-        self.senators = pd.concat(out)
-        print(self.senators)
+        self.senators = pd.concat(out, sort=False)
         self.senator_ids =  self.senators.candidateId
-        print(self.senator_ids)
+        print('Current senator data obtained.')
         
     def get_senator_bios(self):
         print('Getting senator bios...')
         msg = ('Must obtain Senator IDs using APIHandler.get_current_senators()'
                ' first')
         assert self.senator_ids is not None, msg
-        bios = {}
+        bios = []
         for senator in self.senator_ids:
-            print(f'  for senator with ID: {senator}...')
+            print(f'  for senator with ID: {senator}...', end='\r')
             bio = self.CandidateBio.get_bio(senator)
-            print('\n\n', bio)
-            bios[senator] = bio
             detailed_bio = self.CandidateBio.get_detailed_bio(senator)
-            bios[senator].update(detailed_bio)
+            bio.update(detailed_bio)
+            bio_df = self._json_to_df(bio, index='bio_candidate_candidateId')
+            bios.append(bio_df)
+        bios = pd.concat(bios, sort=False)
         self.senator_bios = bios
-        #print(self.senator_bios)
+        print('\nSenator bios obtained.')
 
-    def _senator_json_to_df(self):
-        dfs = []
-        for state in self.senator_data:
-            candidates = state['candidateList']['candidate']
-            for candidate in candidates:
-                df = pd.DataFrame({k: [v] for k, v in candidate.items()})
-                dfs.append(df)
-        df = pd.concat(dfs)
-        return df                                                 
+    def save_data(self):
+        dfs = [self.senators, self.senator_bios]
+        filenames = ['senators', 'senator_bios']
+        for df, filename in zip(dfs, filenames):
+            outpath = f'{OUTPUT}/{filename}_{TODAY}.csv'
+            print(f'Saving data to {outpath}...')
+            df.to_csv(outpath, index=False)
 
+    def _json_to_df(self, json_obj, index=None):
+        json_obj = self._format_json(json_obj)
+        df = pd.DataFrame(json_obj, index=[json_obj[index]])
+        return df
+
+    def _format_json(self, json_obj):
+        for k, v in json_obj.items():
+            if isinstance(v, list):
+                json_obj[k] = str(v)
+            elif '/' in v and not v.startswith('http'):
+                try:
+                    json_obj[k] = datetime.strptime(v, API_DATE_FORMAT).date()
+                except BaseException as e:
+                    print(f'Could not convert {v} to date:\n{e}')
+        return json_obj
+    
     
 class Officials:
     def __init__(self, url, params):
@@ -92,14 +110,14 @@ class CandidateBio:
         params.update({'candidateId': candidate_id})
         url = f'{self.url}.getBio'
         res = call(url, params)
-        return flatten(res, ignore=self.ignore)
+        return flatten(res, out={}, ignore=self.ignore)
         
     def get_detailed_bio(self, candidate_id):
         params = self.params
         params.update({'candidateId': candidate_id})
         url = f'{self.url}.getDetailedBio'
         res = call(url, params)
-        return flatten(res, ignore=self.ignore)
+        return flatten(res, out={}, ignore=self.ignore)
 
 
 def call(url, params):
