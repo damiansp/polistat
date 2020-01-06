@@ -68,7 +68,14 @@ class APIHandler:
         print('\nSenator bios obtained.')
 
     def get_all_senator_voting_records(self):
-        pass # TODO
+        out = None
+        for sid, designation in self.senator_id_map.items():
+            if out is None:
+                out = self.Votes.get_by_official(sid)
+                out = self._reformat_votes(out, sid)
+                print(out)
+                # CONTINUE HERE
+        print(out)
 
     def save_data(self):
         dfs = [self.senators, self.senator_bios]
@@ -93,6 +100,25 @@ class APIHandler:
                 except BaseException as e:
                     print(f'Could not convert {v} to date:\n{e}')
         return json_obj
+
+    def _reformat_votes(self, raw, candidate_id):
+        out = {'billId': [],
+               'billNumber': [],
+               'title': [],
+               'type': [],
+               'categoryId': [],
+               'categoryName': [],
+               'officeId': [],
+               'office': [],
+               'actionId': [],
+               'stage': [],
+               'vote': []}
+        bill_list = raw['bills']['bill']
+        for bill in bill_list:
+            for field in out.keys():
+                out[field].append(bill.get(field, ''))
+        out['candidateId'] = candidate_id,
+        return out
     
     
 class Officials:
@@ -140,6 +166,7 @@ class Votes:
         params.update({'candidateId': candidateId})
         if year is not None:
             params.update({'year': year})
+        url = f'{self.url}.getByOfficial'
         res = call(url, params)
         return res
                         
