@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+# NEXT: BallotMeasure, Votes
 from datetime import datetime
 import json
 from pprint import pprint

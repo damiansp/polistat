@@ -1,4 +1,4 @@
-'''
+'''A
 TODO
 '''
 from datetime import datetime
@@ -10,9 +10,9 @@ import pandas as pd
 
 # officeID values
 DEV = True
-OFFICE_SENATE = 6
+OFFICE_ID_SENATE = 6
 SENATE_TYPE_ID = 'C'
-STATES = ['CA', 'KY', 'OR'] if DEV else [
+STATES = ['VT', 'KY', 'OR'] if DEV else [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID',
     'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS',
     'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK',
@@ -30,26 +30,33 @@ class APIHandler:
         self.params = {'key': self._api_key, 'o': 'JSON'}
         self.Officials = Officials(self.url, self.params)
         self.CandidateBio = CandidateBio(self.url, self.params)
+        self.Votes = Votes(self.url, self.params)
 
     def get_current_senators(self):
         print('Getting current senator data...')
         out = []
         for state in STATES:
-            res = self.Officials.get_by_office_state(OFFICE_SENATE, state)
+            res = self.Officials.get_by_office_state(OFFICE_ID_SENATE, state)
             res = {k.replace('candidateList_', ''): v for k,v in res.items()}
             df = pd.DataFrame(res)
             out.append(df)
         self.senators = pd.concat(out, sort=False)
-        self.senator_ids =  self.senators.candidateId
+        self.senators['designation'] = (self.senators.officeStateId
+                                        + self.senators.lastName
+                                        + self.senators.firstName)
+        self.senator_id_map =  {
+            idn: designation
+            for idn, designation in zip(self.senators.candidateId,
+                                        self.senators.designation)}
         print('Current senator data obtained.')
         
     def get_senator_bios(self):
         print('Getting senator bios...')
         msg = ('Must obtain Senator IDs using APIHandler.get_current_senators()'
                ' first')
-        assert self.senator_ids is not None, msg
+        assert self.senator_id_map is not None, msg
         bios = []
-        for senator in self.senator_ids:
+        for senator in self.senator_id_map:
             print(f'  for senator with ID: {senator}...', end='\r')
             bio = self.CandidateBio.get_bio(senator)
             detailed_bio = self.CandidateBio.get_detailed_bio(senator)
@@ -59,6 +66,9 @@ class APIHandler:
         bios = pd.concat(bios, sort=False)
         self.senator_bios = bios
         print('\nSenator bios obtained.')
+
+    def get_all_senator_voting_records(self):
+        pass # TODO
 
     def save_data(self):
         dfs = [self.senators, self.senator_bios]
@@ -120,6 +130,21 @@ class CandidateBio:
         return flatten(res, out={}, ignore=self.ignore)
 
 
+class Votes:
+    def __init__(self, url, params):
+        self.params = params
+        self.url = f'{url}/Votes'
+
+    def get_by_official(self, candidateId, year=None, get='all'):
+        params = self.params
+        params.update({'candidateId': candidateId})
+        if year is not None:
+            params.update({'year': year})
+        res = call(url, params)
+        return res
+                        
+        
+    
 def call(url, params):
     try:
         res = requests.get(url, params)
